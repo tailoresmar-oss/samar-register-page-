@@ -74,7 +74,7 @@
         const email=$('email').value.trim(), password=$('password').value;
         const {data,error}=await client.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}});
         if(error) throw error;
-        if(data.session){message('تم تسجيل الدخول بنجاح. يمكنك الآن استخدام حسابك في سمار.');}
+        if(data.session){await submitRequest();}
         else message('تم إنشاء الحساب، لكن لم تُنشأ جلسة دخول تلقائية. سجّل الدخول من النموذج أدناه ثم أعد المحاولة.','err');
       }catch(err){message(err.message||'تعذر إنشاء الحساب. حاول مرة أخرى.','err');}
       finally{busy('signupBtn',false);}
