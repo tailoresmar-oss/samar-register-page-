@@ -25,29 +25,29 @@
     <section class="card">
       <div id="signupPanel">
         <h2>تسجيل محل جديد</h2>
-        <p class="intro">أنشئ حسابك وقدّم طلب انضمام محلك إلى منصة سمار. سيتم تفعيل المحل بعد مراجعة وموافقة إدارة المنصة.</p>
+        <p class="intro">أنشئ حسابك وسجّل محلك في منصة سمار. سيصبح محلك نشطًا مباشرة بعد التسجيل.</p>
         <form id="signupForm">
           <label for="shop">اسم المحل</label><input id="shop" required maxlength="120" autocomplete="organization" placeholder="مثال: سمار للخياطة الرجالية">
           <label for="contact">اسم المسؤول</label><input id="contact" required maxlength="120" autocomplete="name" placeholder="الاسم الكامل">
           <label for="phone">رقم الجوال</label><input id="phone" required maxlength="25" inputmode="tel" autocomplete="tel" placeholder="05xxxxxxxx">
           <label for="email">البريد الإلكتروني</label><input id="email" type="email" required autocomplete="email" placeholder="name@example.com">
           <label for="password">كلمة المرور</label><input id="password" type="password" required minlength="8" autocomplete="new-password" placeholder="8 أحرف على الأقل">
-          <button id="signupBtn" type="submit">إنشاء الحساب وإرسال الطلب</button>
+          <button id="signupBtn" type="submit">إنشاء الحساب وتفعيل المحل</button>
         </form>
         <div class="switch">لديك حساب بالفعل؟ <a id="showLogin">تسجيل الدخول</a></div>
       </div>
       <div id="loginPanel" class="hidden">
-        <h2>تسجيل الدخول</h2><p class="intro">سجّل دخولك بالبريد وكلمة المرور لإرسال طلب انضمام محلك أو متابعة حالته.</p>
+        <h2>تسجيل الدخول</h2><p class="intro">سجّل دخولك بالبريد وكلمة المرور.</p>
         <form id="loginForm">
           <label for="loginEmail">البريد الإلكتروني</label><input id="loginEmail" type="email" required autocomplete="email">
           <label for="loginPassword">كلمة المرور</label><input id="loginPassword" type="password" required autocomplete="current-password">
-          <button id="loginBtn" type="submit">تسجيل الدخول وإرسال الطلب</button>
+          <button id="loginBtn" type="submit">تسجيل الدخول</button>
         </form>
         <div class="switch"><a id="showSignup">إنشاء حساب جديد</a></div>
       </div>
       <div id="notice" class="notice" role="status" aria-live="polite"></div>
     </section>
-    <p class="hint">بعد إرسال الطلب، يبقى المحل قيد المراجعة حتى موافقة إدارة منصة سمار.<br>لا تشارك كلمة المرور أو رمز التحقق مع أي شخص.</p>
+    <p class="hint">يتم تفعيل المحل مباشرة عند اكتمال التسجيل. لا تشارك كلمة المرور مع أي شخص.<br>لا تشارك كلمة المرور أو رمز التحقق مع أي شخص.</p>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
@@ -65,7 +65,7 @@
       if(!shop||!contact||!phone) throw new Error('أكمل اسم المحل واسم المسؤول ورقم الجوال.');
       const {data,error}=await client.rpc('submit_shop_registration',{p_shop_name:shop,p_contact_name:contact,p_phone:phone});
       if(error) throw error;
-      message('تم إرسال طلب انضمام محلك بنجاح. حالة الطلب الآن: قيد المراجعة، وسيتم تفعيل المحل بعد موافقة إدارة المنصة.');
+      message('تم إنشاء المحل وتفعيله بنجاح. أنت الآن مالك المحل ويمكنك تسجيل الدخول إلى سمار.');
       return data;
     }
     $('signupForm').addEventListener('submit',async e=>{
@@ -74,8 +74,8 @@
         const email=$('email').value.trim(), password=$('password').value;
         const {data,error}=await client.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}});
         if(error) throw error;
-        if(data.session){await submitRequest();}
-        else message('تم إنشاء الحساب. افتح رسالة التحقق التي أرسلناها إلى بريدك الإلكتروني، ثم ارجع إلى هذه الصفحة وسجّل الدخول لإرسال طلب المحل.');
+        if(data.session){message('تم تسجيل الدخول بنجاح. يمكنك الآن استخدام حسابك في سمار.');}
+        else message('تم إنشاء الحساب، لكن لم تُنشأ جلسة دخول تلقائية. سجّل الدخول من النموذج أدناه ثم أعد المحاولة.','err');
       }catch(err){message(err.message||'تعذر إنشاء الحساب. حاول مرة أخرى.','err');}
       finally{busy('signupBtn',false);}
     });
@@ -84,12 +84,12 @@
       try{
         const {error}=await client.auth.signInWithPassword({email:$('loginEmail').value.trim(),password:$('loginPassword').value});
         if(error) throw error;
-        await submitRequest();
+        message('تم تسجيل الدخول بنجاح. حسابك جاهز للاستخدام في سمار.');
       }catch(err){message(err.message||'تعذر تسجيل الدخول أو إرسال الطلب.','err');}
       finally{busy('loginBtn',false);}
     });
     client.auth.getSession().then(({data})=>{
-      if(data.session){$('loginPanel').classList.remove('hidden');$('signupPanel').classList.add('hidden');message('تم التحقق من الجلسة. أكمل بيانات المحل لإرسال طلب الانضمام.');}
+      if(data.session){$('loginPanel').classList.remove('hidden');$('signupPanel').classList.add('hidden');message('أنت مسجل الدخول بالفعل. أكمل بيانات المحل لإنشائه وتفعيله مباشرة.');}
     });
   </script>
 </body>
